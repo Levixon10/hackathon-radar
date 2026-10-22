@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hackathon Radar</title>
+<style>
+  :root {
+    --bg: #f6f5f2; --surface: #ffffff; --text: #1d1d1b; --muted: #6b6a66; --line: #e4e2dc;
+    --accent: #3b5bdb; --accent-soft: #e7ecff;
+    --good: #2b7a4b; --good-soft: #e3f3e9; --bad: #b4372f; --bad-soft: #fbe7e5;
+    --warn: #a35d00; --warn-soft: #fff1dc;
+    --s1: #2b7a4b; --s2: #3b5bdb; --s3: #8a8984;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141413; --surface: #1e1e1c; --text: #ecebe6; --muted: #9c9a93; --line: #2f2e2b;
+      --accent: #8aa2ff; --accent-soft: #232a45;
+      --good: #6fcf97; --good-soft: #1b3326; --bad: #f28b82; --bad-soft: #3a1f1d;
+      --warn: #f2b45c; --warn-soft: #3a2c16;
+      --s1: #6fcf97; --s2: #8aa2ff; --s3: #77756f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 32px 16px 64px; }
+  header h1 { margin: 0; font-size: 26px; letter-spacing: -0.02em; }
+  header p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .stat b { display: block; font-size: 24px; font-variant-numeric: tabular-nums; }
+  .stat span { color: var(--muted); font-size: 12px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px;
+              position: sticky; top: 0; background: var(--bg); padding: 10px 0; z-index: 2; }
+  input[type=search] { flex: 1 1 220px; min-width: 0; padding: 8px 12px; border-radius: 8px;
+                       border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; }
+  .chip { border: 1px solid var(--line); background: var(--surface); color: var(--text); border-radius: 999px;
+          padding: 5px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+  .chip[aria-pressed=true] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .chip:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .card { display: grid; grid-template-columns: 52px 1fr; gap: 14px; background: var(--surface);
+          border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
+  .card.rejected { opacity: 0.6; }
+  .score { width: 52px; height: 52px; border-radius: 10px; display: grid; place-items: center;
+           font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; color: var(--surface); }
+  .title { font-weight: 600; font-size: 16px; color: var(--text); text-decoration: none; }
+  .title:hover { color: var(--accent); }
+  .new { background: var(--accent); color: var(--surface); font-size: 11px; font-weight: 700;
+         border-radius: 4px; padding: 1px 6px; margin-left: 6px; vertical-align: 2px; }
+  .meta { color: var(--muted); font-size: 13px; margin-top: 2px; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+  .due-soon { color: var(--bad); font-weight: 600; }
+  .reasons { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .r { font-size: 12px; padding: 2px 8px; border-radius: 6px; background: var(--good-soft); color: var(--good); }
+  .r.neg { background: var(--bad-soft); color: var(--bad); }
+  .r.info { background: var(--warn-soft); color: var(--warn); }
+  .why { font-size: 12px; color: var(--bad); margin-top: 6px; }
+  .empty { text-align: center; color: var(--muted); padding: 48px 0; }
+  footer { color: var(--muted); font-size: 12px; margin-top: 28px; }
+  code { font-size: 12px; background: var(--line); padding: 1px 5px; border-radius: 4px; }
+  @media (max-width: 560px) {
+    .card { grid-template-columns: 40px 1fr; gap: 10px; padding: 12px; }
+    .score { width: 40px; height: 40px; font-size: 15px; }
+    .stat b { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Hackathon Radar</h1>
+    <p id="updated"></p>
+  </header>
+  <section class="stats" aria-label="Summary">
+    <div class="stat"><b id="n-good">0</b><span>worth a look</span></div>
+    <div class="stat"><b id="n-new">0</b><span>new today</span></div>
+    <div class="stat"><b id="n-all">0</b><span>open events scanned</span></div>
+  </section>
+  <div class="controls">
+    <input type="search" id="q" placeholder="Search title, organiser, city…" aria-label="Search">
+    <button class="chip" id="f-new" aria-pressed="false">New today</button>
+    <button class="chip" id="f-online" aria-pressed="false">Online only</button>
+    <button class="chip" id="f-sort" aria-pressed="false">Closing soonest</button>
+    <button class="chip" id="f-all" aria-pressed="false">Show filtered out</button>
+  </div>
+  <div id="sources" class="controls" style="position:static;padding-top:0"></div>
+  <main id="list"></main>
+  <footer>Rebuilt every morning at 8:00 IST from Unstop, Devfolio, Devpost, HackerEarth and MLH. What counts as good is set in <code>config.toml</code>.</footer>
+</div>
+<script>
+const DATA = /*__DATA__*/null;
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("radar:" + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("radar:" + k, JSON.stringify(v)); } catch {} },
+};
+const state = {
+  q: "", new: store.get("new", false), online: store.get("online", false),
+  sort: store.get("sort", false), all: store.get("all", false),
+  hidden: new Set(store.get("hidden", [])),
+};
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const inr = n => n >= 1e7 ? `₹${(n / 1e7).toFixed(1)} Cr` : n >= 1e5 ? `₹${(n / 1e5).toFixed(1)} L` : `₹${n.toLocaleString("en-IN")}`;
+const daysLeft = d => d ? Math.ceil((new Date(d) - Date.now()) / 864e5) : null;
+const scoreColor = s => s >= 70 ? "var(--s1)" : s >= 45 ? "var(--s2)" : "var(--s3)";
+
+function render() {
+  const evs = DATA.events;
+  const good = evs.filter(e => !e.rejected);
+  $("n-good").textContent = good.length;
+  $("n-new").textContent = good.filter(e => e.new).length;
+  $("n-all").textContent = evs.length;
+
+  const q = state.q.toLowerCase();
+  let rows = evs.filter(e =>
+    (state.all || !e.rejected) &&
+    (!state.new || e.new) &&
+    (!state.online || e.online) &&
+    !state.hidden.has(e.source) &&
+    (!q || `${e.title} ${e.organiser} ${e.city} ${e.source}`.toLowerCase().includes(q)));
+  if (state.sort) rows = [...rows].sort((a, b) => (daysLeft(a.deadline) ?? 1e9) - (daysLeft(b.deadline) ?? 1e9));
+
+  $("list").innerHTML = rows.length ? rows.map(card).join("") :
+    `<p class="empty">${state.new ? "Nothing new today. Check back tomorrow." : "No events match these filters."}</p>`;
+}
+
+function card(e) {
+  const d = daysLeft(e.deadline);
+  const due = d === null ? "no deadline listed" : d <= 0 ? "closes today" : `${d} day${d > 1 ? "s" : ""} left`;
+  const meta = [
+    esc(e.organiser || e.source), esc(e.source),
+    `<span class="${d !== null && d <= 3 ? "due-soon" : ""}">${due}</span>`,
+    e.online ? "Online" : esc(e.city || "In person"),
+    e.prize ? inr(e.prize) + " prizes" : "",
+    e.registrations ? e.registrations.toLocaleString("en-IN") + " registered" : "",
+  ].filter(Boolean).map(x => `<span>${x}</span>`).join("");
+  const reasons = e.reasons.map(r => {
+    const neg = r.startsWith("-"), info = !/^[+-]/.test(r);
+    return `<span class="r ${neg ? "neg" : info ? "info" : ""}">${esc(r)}</span>`;
+  }).join("");
+  return `<article class="card ${e.rejected ? "rejected" : ""}">
+    <div class="score" style="background:${scoreColor(e.score)}" title="Score">${e.score}</div>
+    <div>
+      <a class="title" href="${esc(e.url)}" target="_blank" rel="noopener">${esc(e.title)}</a>${e.new ? '<span class="new">NEW</span>' : ""}
+      <div class="meta">${meta}</div>
+      <div class="reasons">${reasons}</div>
+      ${e.rejected ? `<div class="why">Filtered out: ${esc(e.rejected)}</div>` : ""}
+    </div>
+  </article>`;
+}
+
+function toggle(id, key) {
+  const btn = $(id);
+  btn.setAttribute("aria-pressed", state[key]);
+  btn.onclick = () => { state[key] = !state[key]; store.set(key, state[key]); btn.setAttribute("aria-pressed", state[key]); render(); };
+}
+
+function init() {
+  const up = new Date(DATA.updated);
+  const failed = Object.entries(DATA.sources).filter(([, n]) => n === null).map(([s]) => s);
+  $("updated").textContent = `Updated ${up.toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}`
+    + (failed.length ? ` · couldn't reach ${failed.join(", ")}` : "");
+  $("q").oninput = e => { state.q = e.target.value; render(); };
+  toggle("f-new", "new"); toggle("f-online", "online"); toggle("f-sort", "sort"); toggle("f-all", "all");
+  $("sources").innerHTML = Object.entries(DATA.sources).filter(([, n]) => n !== null).map(([s, n]) =>
+    `<button class="chip" data-src="${s}" aria-pressed="${!state.hidden.has(s)}">${s} · ${n}</button>`).join("");
+  $("sources").onclick = ev => {
+    const b = ev.target.closest("[data-src]"); if (!b) return;
+    const s = b.dataset.src;
+    state.hidden.has(s) ? state.hidden.delete(s) : state.hidden.add(s);
+    b.setAttribute("aria-pressed", !state.hidden.has(s));
+    store.set("hidden", [...state.hidden]); render();
+  };
+  render();
+}
+init();
+</script>
+</body>
+</html>

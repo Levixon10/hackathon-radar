@@ -1,0 +1,63 @@
+# Hackathon Radar preferences. Edit freely; every number here is a score weight.
+# An event's score is the sum of the matching bonuses minus penalties (roughly 0-100).
+
+# Keywords match whole words, case-insensitively ("ai" won't match "chair").
+
+# Show events scoring at least this much.
+min_score = 30
+
+# Your city (lowercase). Offline events here are not penalised; offline events
+# elsewhere in India are. Leave empty if you only want online events to rank well.
+home_city = ""
+
+# Skip events restricted to women participants.
+skip_women_only = false
+
+# Organisers whose events you'd always want to hear about. Matched against the
+# title and organiser name (and "powered by / sponsored by" lines in the description).
+top_brands = [
+  "amazon", "aws", "paypal", "nebius", "google", "deepmind", "microsoft", "meta", "apple", "nvidia",
+  "openai", "anthropic", "ibm", "intel", "adobe", "oracle", "salesforce", "samsung",
+  "qualcomm", "cisco", "uber", "atlassian", "flipkart", "walmart", "myntra", "meesho",
+  "zomato", "swiggy", "phonepe", "paytm", "razorpay", "cred", "zepto", "goldman sachs",
+  "jp morgan", "jpmorgan", "morgan stanley", "visa", "mastercard", "american express",
+  "deutsche bank", "barclays", "tata", "tcs", "reliance", "jio", "infosys", "isro",
+  "smart india hackathon", "niti aayog", "meity", "ministry of", "government of india",
+]
+
+# Strong but smaller names: AI labs, dev-tool companies, crypto ecosystems, fintechs.
+good_brands = [
+  "omnirush", "frontier", "hugging face", "huggingface", "kaggle", "mistral", "groq",
+  "perplexity", "databricks", "snowflake", "mongodb", "postman", "github", "gitlab",
+  "vercel", "cloudflare", "elastic", "redis", "twilio", "stripe", "polygon", "solana",
+  "ethereum", "ethglobal", "ethindia", "mlh", "major league hacking", "sarvam", "krutrim", "zoho", "freshworks", "browserstack",
+  "groww", "zerodha", "dream11", "ola", "rapido", "upgrad", "physics wallah",
+]
+
+# Elite colleges whose fests are worth it despite being college events.
+top_colleges = ["iit", "iiit", "bits pilani", "bits goa", "bits hyderabad", "nit", "iisc", "iim"]
+
+# Topics you care about. Matching any of these in the title/description adds a bonus.
+interests = [
+  "ai", "ml", "machine learning", "genai", "generative", "llm", "agent", "agentic",
+  "data science", "deep learning", "computer vision", "nlp", "buildathon",
+]
+
+[weights]
+top_brand = 35
+good_brand = 20
+top_college = 8
+generic_college = -10
+sponsor_mention = 0.5       # multiplier for a brand found only in "powered by" text
+career_perks = 12           # PPI / PPO / internship / hiring
+prize_max = 30              # log-scaled; about 8 points for ₹1L, 20 for ₹10L
+popularity_max = 12         # log-scaled on registrations
+interest_match = 8
+online = 5
+offline_home_city = 3
+offline_elsewhere = -8
+registration_fee = -15
+not_really_a_hackathon = -12   # quizzes, paper presentations, poster contests
+event_mill = -15            # same organiser running 3+ open events at once
+
+usd_to_inr = 88
