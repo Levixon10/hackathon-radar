@@ -1,0 +1,28 @@
+name: Refresh
+
+on:
+  schedule:
+    - cron: "30 2 * * *"   # 08:00 IST
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Kolkata
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python radar.py --html --top 0
+      - name: Commit the new page
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add index.html seen.json
+          git diff --cached --quiet || git commit -m "Refresh $(date +%F)"
+          git push
